@@ -216,13 +216,10 @@ export function initDesktop(room) {
 
     room.onmessage = (event) => {
         const { data, fromClientId } = event;
-        console.log('Desktop: Received message:', data, 'from:', fromClientId, 'expected mobile peer:', mobilePeerId);
         
-        // Temporarily less restrictive filtering for debugging
+        // Process messages immediately without excessive logging
         if (data.type === 'castSpell') {
-            console.log('Desktop: Processing castSpell message for:', data.spell);
             if (data.spell === 'Fireball') {
-                console.log('Desktop: Calling castFireball()');
                 castFireball();
             }
         } else if (data.type === 'spokenText') {

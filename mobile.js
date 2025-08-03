@@ -86,9 +86,8 @@ function onCommand(command) {
     // Always show what was heard on mobile.
     updateMicStatus(`Heard: "${command}"`);
 
-    // Send the recognized text to the desktop client for debugging.
+    // Send the recognized text to the desktop client immediately
     if (desktopPeerId) {
-        console.log('Mobile: Sending spokenText to desktop:', command);
         roomInstance.send({
             type: 'spokenText',
             text: command,
@@ -96,11 +95,10 @@ function onCommand(command) {
     }
 
     const currentSpell = SPELLS[currentPage];
-    if (command.toLowerCase() === currentSpell.name.toLowerCase()) {
+    if (command.toLowerCase().includes(currentSpell.name.toLowerCase())) { // Use includes for partial matches
         if (desktopPeerId) {
-            // Update status after a short delay so user can see "Heard:..."
-            setTimeout(() => updateMicStatus(`Casting ${currentSpell.name}!`), 500);
-            console.log('Mobile: Sending castSpell message:', currentSpell.name);
+            // Update status immediately without delay
+            updateMicStatus(`Casting ${currentSpell.name}!`);
             roomInstance.send({
                 type: 'castSpell',
                 spell: currentSpell.name,
@@ -108,8 +106,6 @@ function onCommand(command) {
         } else {
             updateMicStatus('Desktop not connected. Cannot cast spell.');
         }
-    } else {
-        // No need for another status update, "Heard:..." is enough.
     }
 }
 

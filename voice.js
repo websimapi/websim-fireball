@@ -12,7 +12,7 @@ export class VoiceCommander {
         
         this.recognition = new SpeechRecognition();
         this.recognition.continuous = true;
-        this.recognition.interimResults = false;
+        this.recognition.interimResults = true; // Enable interim results for faster detection
         this.recognition.lang = 'en-US';
         
         this.setupEventListeners();
@@ -20,26 +20,44 @@ export class VoiceCommander {
 
     setupEventListeners() {
         this.recognition.onresult = (event) => {
-            const last = event.results.length - 1;
-            const command = event.results[last][0].transcript.trim();
-            this.onCommand(command);
+            // Process both interim and final results for faster detection
+            for (let i = event.resultIndex; i < event.results.length; i++) {
+                const result = event.results[i];
+                const command = result[0].transcript.trim();
+                
+                // Send command immediately if confidence is high or if it's a final result
+                if (result.isFinal || result[0].confidence > 0.8) {
+                    this.onCommand(command);
+                    break; // Process only the first high-confidence result
+                }
+            }
         };
 
         this.recognition.onspeechend = () => {
-            // It will restart in onend
+            // Restart immediately when speech ends for continuous listening
+            if (!this.manualStop) {
+                setTimeout(() => {
+                    try {
+                        this.recognition.start();
+                    } catch (e) {
+                        console.warn("Could not restart recognition:", e.message);
+                    }
+                }, 100); // Minimal delay for restart
+            }
         };
         
         this.recognition.onend = () => {
-            // The service sometimes stops. Restart it to keep listening.
-            if (this.manualStop) {
+            // Only restart if we haven't manually stopped and didn't already restart in onspeechend
+            if (!this.manualStop) {
+                setTimeout(() => {
+                    try {
+                        this.recognition.start();
+                    } catch (e) {
+                        console.warn("Could not restart recognition:", e.message);
+                    }
+                }, 50); // Very short delay
+            } else {
                 this.onStatus("Listening stopped.");
-                return;
-            }
-            try {
-                this.recognition.start();
-            } catch (e) {
-                // This can happen if the page is closed or loses focus sometimes.
-                console.warn("Could not restart recognition:", e.message);
             }
         };
 
