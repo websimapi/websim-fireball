@@ -192,7 +192,7 @@ function setupMovementControls() {
         roomInstance.send({
             type: 'movement',
             x: clampedX,
-            y: -clampedY // Invert Y for game coordinates
+            y: clampedY
         });
     }
 

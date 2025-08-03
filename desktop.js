@@ -125,6 +125,7 @@ function animate() {
     
     // Handle player movement
     if (playerMovement.x !== 0 || playerMovement.y !== 0) {
+        // Correct Y-axis for movement: received y is for the z-axis.
         const moveVector = new THREE.Vector3(playerMovement.x, 0, playerMovement.y);
         moveVector.multiplyScalar(playerSpeed * delta);
         player.position.add(moveVector);
@@ -134,17 +135,12 @@ function animate() {
             const angle = Math.atan2(moveVector.x, moveVector.z);
             player.rotation.y = angle;
         }
-        
-        // Update speaking indicator position if active
-        if (isSpeaking && speakingIndicator) {
-            speakingIndicator.position.copy(player.position);
-            speakingIndicator.position.y = 0.2 + Math.sin(Date.now() * 0.008) * 0.8;
-        }
     }
     
     // Animate speaking indicator with more dramatic movement and effects
     if (isSpeaking && speakingIndicator) {
         const time = Date.now() * 0.008; // Slightly faster animation
+        speakingIndicator.position.copy(player.position);
         speakingIndicator.position.y = 0.2 + Math.sin(time) * 0.8; // Higher up and down movement
         speakingIndicator.rotation.z += delta * 3; // Faster rotation
         
@@ -162,6 +158,11 @@ function animate() {
             fireballs.splice(index, 1);
         }
     });
+
+    // Camera follows player
+    const cameraOffset = new THREE.Vector3(0, 5, 10);
+    camera.position.lerp(player.position.clone().add(cameraOffset), 0.05);
+    camera.lookAt(player.position);
 
     renderer.render(scene, camera);
 }
