@@ -82,18 +82,17 @@ function showInfo(text) {
 }
 
 function findMyMobilePeer() {
+    if (!roomInstance.peers[roomInstance.clientId]) return; // Not ready yet
     const myUsername = roomInstance.peers[roomInstance.clientId].username;
-    const peers = Object.values(roomInstance.peers);
-    const myPresence = Object.values(roomInstance.presence);
     
-    const mobilePeer = myPresence.find(p => 
-        p.device === 'mobile' && 
-        p.online &&
-        roomInstance.peers[p.clientId]?.username === myUsername
+    const mobilePeerEntry = Object.entries(roomInstance.presence).find(([clientId, presence]) => 
+        presence.device === 'mobile' && 
+        presence.online &&
+        roomInstance.peers[clientId]?.username === myUsername
     );
 
-    if (mobilePeer) {
-        mobilePeerId = mobilePeer.clientId;
+    if (mobilePeerEntry) {
+        mobilePeerId = mobilePeerEntry[0]; // This is the clientId
         showInfo(`Connected to mobile device.`);
     } else {
         mobilePeerId = null;
@@ -139,4 +138,3 @@ export function initDesktop(room) {
         }
     };
 }
-

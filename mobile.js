@@ -102,19 +102,18 @@ function onCommand(command) {
 }
 
 function findMyDesktopPeer() {
+    if (!roomInstance.peers[roomInstance.clientId]) return; // Not ready yet
     const myUsername = roomInstance.peers[roomInstance.clientId].username;
-    const peers = Object.values(roomInstance.peers);
-    const myPresence = Object.values(roomInstance.presence);
     
-    const desktopPeer = myPresence.find(p => 
-        p.device === 'desktop' && 
-        p.online &&
-        roomInstance.peers[p.clientId]?.username === myUsername
+    const desktopPeerEntry = Object.entries(roomInstance.presence).find(([clientId, presence]) => 
+        presence.device === 'desktop' && 
+        presence.online &&
+        roomInstance.peers[clientId]?.username === myUsername
     );
 
-    if (desktopPeer) {
-        desktopPeerId = desktopPeer.clientId;
-        updateMicStatus('Desktop connected. Say the spell name to cast!');
+    if (desktopPeerEntry) {
+        desktopPeerId = desktopPeerEntry[0]; // This is the clientId
+        updateMicStatus('Desktop connected. Hold spellbook and say the spell name to cast!');
     } else {
         desktopPeerId = null;
         updateMicStatus('Waiting for desktop to connect...');
