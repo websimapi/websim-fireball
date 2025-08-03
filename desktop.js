@@ -91,13 +91,15 @@ function setupScene() {
     player.rotation.y = Math.PI; // Face the camera
     scene.add(player);
 
-    // Speaking Indicator
-    const ringGeometry = new THREE.RingGeometry(1.5, 1.8, 32);
+    // Speaking Indicator - make it thinner, blue, glowing
+    const ringGeometry = new THREE.RingGeometry(1.2, 1.35, 32); // Thinner ring
     const ringMaterial = new THREE.MeshBasicMaterial({ 
-        color: 0xffff00, 
+        color: 0x4488ff, // Blue color
         transparent: true, 
-        opacity: 0.8,
-        side: THREE.DoubleSide
+        opacity: 0.6, // More transparent
+        side: THREE.DoubleSide,
+        emissive: 0x2244cc, // Blue glow
+        emissiveIntensity: 0.5
     });
     speakingIndicator = new THREE.Mesh(ringGeometry, ringMaterial);
     speakingIndicator.rotation.x = -Math.PI / 2; // Lay flat on ground
@@ -119,11 +121,16 @@ function animate() {
     
     const delta = 0.016; // simple fixed timestep
     
-    // Animate speaking indicator
+    // Animate speaking indicator with more dramatic movement and effects
     if (isSpeaking && speakingIndicator) {
-        const time = Date.now() * 0.005;
-        speakingIndicator.position.y = 0.1 + Math.sin(time) * 0.3; // Move up and down
-        speakingIndicator.rotation.z += delta * 2; // Rotate for extra effect
+        const time = Date.now() * 0.008; // Slightly faster animation
+        speakingIndicator.position.y = 0.2 + Math.sin(time) * 0.8; // Higher up and down movement
+        speakingIndicator.rotation.z += delta * 3; // Faster rotation
+        
+        // Pulsing glow effect
+        const pulse = (Math.sin(time * 2) + 1) * 0.5; // 0 to 1
+        speakingIndicator.material.emissiveIntensity = 0.3 + pulse * 0.4;
+        speakingIndicator.material.opacity = 0.4 + pulse * 0.3;
     }
     
     fireballs.forEach((fireball, index) => {
@@ -203,6 +210,9 @@ function castFireball() {
     }
     spell.lastCast = now;
     updateCooldownVisual('Fireball');
+
+    // Stop speaking indicator when spell is cast
+    showSpeakingIndicator(false);
 
     const fireballGeometry = new THREE.SphereGeometry(0.3, 16, 16);
     const fireballMaterial = new THREE.MeshStandardMaterial({
