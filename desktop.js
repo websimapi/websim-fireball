@@ -4,6 +4,7 @@ let scene, camera, renderer, playerMarker;
 let mobilePeerId = null;
 let roomInstance = null;
 let fireballs = [];
+let lastSpokenText = '';
 
 function setupScene() {
     const app = document.getElementById('app');
@@ -21,6 +22,11 @@ function setupScene() {
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.shadowMap.enabled = true;
     app.appendChild(renderer.domElement);
+
+    // Info display
+    let infoEl = document.createElement('div');
+    infoEl.id = 'desktop-info';
+    document.getElementById('app').appendChild(infoEl);
 
     // Lighting
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
@@ -71,14 +77,14 @@ function animate() {
     renderer.render(scene, camera);
 }
 
-function showInfo(text) {
+function showInfo() {
     let infoEl = document.getElementById('desktop-info');
-    if (!infoEl) {
-        infoEl = document.createElement('div');
-        infoEl.id = 'desktop-info';
-        document.getElementById('app').appendChild(infoEl);
-    }
-    infoEl.textContent = text;
+    if (!infoEl) return;
+
+    const connectionStatus = mobilePeerId ? 'Mobile device connected.' : 'Waiting for mobile device to connect...';
+    const spokenTextDisplay = lastSpokenText ? `\nLast heard: "${lastSpokenText}"` : '';
+    
+    infoEl.innerText = connectionStatus + spokenTextDisplay;
 }
 
 function findMyMobilePeer() {
@@ -93,11 +99,10 @@ function findMyMobilePeer() {
 
     if (mobilePeerEntry) {
         mobilePeerId = mobilePeerEntry[0]; // This is the clientId
-        showInfo(`Connected to mobile device.`);
     } else {
         mobilePeerId = null;
-        showInfo('Waiting for mobile device to connect...');
     }
+    showInfo();
 }
 
 function castFireball() {
@@ -131,10 +136,15 @@ export function initDesktop(room) {
 
     room.onmessage = (event) => {
         const { data, fromClientId } = event;
-        if (fromClientId === mobilePeerId && data.type === 'castSpell') {
+        if (fromClientId !== mobilePeerId) return;
+        
+        if (data.type === 'castSpell') {
             if (data.spell === 'Fireball') {
                 castFireball();
             }
+        } else if (data.type === 'spokenText') {
+            lastSpokenText = data.text;
+            showInfo();
         }
     };
 }

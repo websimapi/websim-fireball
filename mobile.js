@@ -83,10 +83,23 @@ function updateMicStatus(text) {
 }
 
 function onCommand(command) {
+    // Always show what was heard on mobile.
+    updateMicStatus(`Heard: "${command}"`);
+
+    // Send the recognized text to the desktop client for debugging.
+    if (desktopPeerId) {
+        roomInstance.send({
+            type: 'spokenText',
+            text: command,
+            recipient: desktopPeerId
+        });
+    }
+
     const currentSpell = SPELLS[currentPage];
     if (command.toLowerCase() === currentSpell.name.toLowerCase()) {
         if (desktopPeerId) {
-            updateMicStatus(`Casting ${currentSpell.name}!`);
+            // Update status after a short delay so user can see "Heard:..."
+            setTimeout(() => updateMicStatus(`Casting ${currentSpell.name}!`), 500);
             roomInstance.send({
                 type: 'castSpell',
                 spell: currentSpell.name,
@@ -97,7 +110,7 @@ function onCommand(command) {
             updateMicStatus('Desktop not connected. Cannot cast spell.');
         }
     } else {
-        updateMicStatus(`Heard "${command}", but current spell is ${currentSpell.name}.`);
+        // No need for another status update, "Heard:..." is enough.
     }
 }
 

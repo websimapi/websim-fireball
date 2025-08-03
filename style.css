@@ -102,6 +102,8 @@ canvas {
     padding: 10px;
     background: rgba(0,0,0,0.3);
     border-radius: 5px;
+    min-height: 1.2em; /* Ensure it doesn't jump in size */
+    transition: all 0.2s;
 }
 
 /* Desktop View */
@@ -114,4 +116,5 @@ canvas {
     border-radius: 5px;
     color: white;
     font-family: monospace;
+    white-space: pre-wrap; /* Allows line breaks with \n */
 }
