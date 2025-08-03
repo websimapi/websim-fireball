@@ -99,10 +99,11 @@ function setupScene() {
     wand.castShadow = true;
 
     // Position the wand to look like it's held in the right hand.
-    // Player is rotated 180 deg, so its local +x points to world -x (screen left).
-    wand.position.set(0.4, 0.2, 0.2); // Position: (right, up, forward) from player's center.
-    // Rotate it to point forward and slightly to the side.
-    wand.rotation.set(THREE.MathUtils.degToRad(70), 0, THREE.MathUtils.degToRad(-20)); 
+    // Player is rotated 180 deg, so its local -x points to world +x (screen right).
+    wand.position.set(-0.4, 0.2, 0.4); // Position: (right, up, forward) from player's center.
+    // Rotate it to point forward (along player's local +Z).
+    // The cylinder's axis is Y, so we rotate it 90 degrees on the X axis.
+    wand.rotation.set(THREE.MathUtils.degToRad(90), 0, 0); 
     
     player.add(wand);
     player.userData.wand = wand;
