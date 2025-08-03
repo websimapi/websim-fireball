@@ -1,10 +1,45 @@
 import * as THREE from 'three';
 
-let scene, camera, renderer, playerMarker;
+let scene, camera, renderer, player;
 let mobilePeerId = null;
 let roomInstance = null;
 let fireballs = [];
 let lastSpokenText = '';
+
+const spellCooldowns = {
+    Fireball: {
+        duration: 3000, // 3 seconds
+        lastCast: 0,
+        timer: null,
+        ui: null
+    }
+};
+
+function setupCooldownUI() {
+    const container = document.getElementById('cooldown-container');
+    container.innerHTML = ''; // Clear previous
+
+    const spell = spellCooldowns.Fireball;
+
+    const cooldownEl = document.createElement('div');
+    cooldownEl.id = 'fireball-cooldown';
+    cooldownEl.className = 'cooldown-spell';
+
+    const img = document.createElement('img');
+    img.src = '/fireball.png';
+    cooldownEl.appendChild(img);
+
+    const overlay = document.createElement('div');
+    overlay.className = 'cooldown-overlay';
+    cooldownEl.appendChild(overlay);
+    
+    container.appendChild(cooldownEl);
+    spell.ui = {
+        element: cooldownEl,
+        overlay: overlay
+    };
+    updateCooldownVisual('Fireball');
+}
 
 function setupScene() {
     const app = document.getElementById('app');
@@ -46,11 +81,12 @@ function setupScene() {
     scene.add(ground);
 
     // Player Marker
-    const markerGeometry = new THREE.CylinderGeometry(0.5, 0.5, 0.1, 32);
-    const markerMaterial = new THREE.MeshStandardMaterial({ color: 0xffff00 });
-    playerMarker = new THREE.Mesh(markerGeometry, markerMaterial);
-    playerMarker.position.y = 0.05;
-    scene.add(playerMarker);
+    const playerGeometry = new THREE.CapsuleGeometry(0.5, 1, 4, 16);
+    const playerMaterial = new THREE.MeshStandardMaterial({ color: 0x3366ff });
+    player = new THREE.Mesh(playerGeometry, playerMaterial);
+    player.position.y = 1; // Capsule height is 2 (1 radius + 1 height), so pivot is at center. Y=1 puts bottom on ground.
+    player.castShadow = true;
+    scene.add(player);
 
     window.addEventListener('resize', onWindowResize, false);
 }
@@ -75,6 +111,32 @@ function animate() {
     });
 
     renderer.render(scene, camera);
+}
+
+function updateCooldownVisual(spellName) {
+    const spell = spellCooldowns[spellName];
+    if (!spell || !spell.ui) return;
+
+    const now = Date.now();
+    const timeSinceCast = now - spell.lastCast;
+    const cooldownRemaining = spell.duration - timeSinceCast;
+
+    if (cooldownRemaining <= 0) {
+        spell.ui.element.classList.add('ready');
+        spell.ui.overlay.style.transform = 'scaleY(0)';
+        if (spell.timer) {
+            clearInterval(spell.timer);
+            spell.timer = null;
+        }
+    } else {
+        spell.ui.element.classList.remove('ready');
+        const progress = cooldownRemaining / spell.duration;
+        spell.ui.overlay.style.transform = `scaleY(${progress})`;
+
+        if (!spell.timer) {
+            spell.timer = setInterval(() => updateCooldownVisual(spellName), 100);
+        }
+    }
 }
 
 function showInfo() {
@@ -106,6 +168,15 @@ function findMyMobilePeer() {
 }
 
 function castFireball() {
+    const spell = spellCooldowns.Fireball;
+    const now = Date.now();
+    if (now - spell.lastCast < spell.duration) {
+        console.log("Fireball is on cooldown.");
+        return; // Spell on cooldown
+    }
+    spell.lastCast = now;
+    updateCooldownVisual('Fireball');
+
     const fireballGeometry = new THREE.SphereGeometry(0.3, 16, 16);
     const fireballMaterial = new THREE.MeshStandardMaterial({
         color: 0xff4500,
@@ -114,12 +185,17 @@ function castFireball() {
     });
     const fireball = new THREE.Mesh(fireballGeometry, fireballMaterial);
     
-    fireball.position.copy(playerMarker.position).y += 1.5;
+    // Get player's forward direction
+    const forward = new THREE.Vector3();
+    player.getWorldDirection(forward);
+
+    // Position fireball in front of player
+    fireball.position.copy(player.position).add(forward.clone().multiplyScalar(1));
     
     const light = new THREE.PointLight(0xff4500, 5, 10);
     fireball.add(light);
     
-    fireball.userData.velocity = new THREE.Vector3(0, 0, -20); // Shoots forward
+    fireball.userData.velocity = forward.multiplyScalar(20); // Shoots in player's facing direction
     fireball.userData.lifetime = 5; // 5 seconds
     
     fireballs.push(fireball);
@@ -129,6 +205,7 @@ function castFireball() {
 export function initDesktop(room) {
     roomInstance = room;
     setupScene();
+    setupCooldownUI();
     animate();
 
     findMyMobilePeer();
@@ -136,7 +213,8 @@ export function initDesktop(room) {
 
     room.onmessage = (event) => {
         const { data, fromClientId } = event;
-        if (fromClientId !== mobilePeerId) return;
+        // Only accept messages from our paired mobile client
+        if (mobilePeerId && fromClientId !== mobilePeerId) return;
         
         if (data.type === 'castSpell') {
             if (data.spell === 'Fireball') {
