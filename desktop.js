@@ -161,8 +161,10 @@ function findMyMobilePeer() {
 
     if (mobilePeerEntry) {
         mobilePeerId = mobilePeerEntry[0]; // This is the clientId
+        console.log('Desktop: Found mobile peer with ID:', mobilePeerId);
     } else {
         mobilePeerId = null;
+        console.log('Desktop: No mobile peer found');
     }
     showInfo();
 }
@@ -213,14 +215,13 @@ export function initDesktop(room) {
 
     room.onmessage = (event) => {
         const { data, fromClientId } = event;
-        // Only accept messages from our paired mobile client.
-        // If we have a mobilePeerId, we only accept messages from it.
-        if (mobilePeerId && fromClientId !== mobilePeerId) {
-            return;
-        }
+        console.log('Desktop: Received message:', data, 'from:', fromClientId, 'expected mobile peer:', mobilePeerId);
         
+        // Temporarily less restrictive filtering for debugging
         if (data.type === 'castSpell') {
+            console.log('Desktop: Processing castSpell message for:', data.spell);
             if (data.spell === 'Fireball') {
+                console.log('Desktop: Calling castFireball()');
                 castFireball();
             }
         } else if (data.type === 'spokenText') {

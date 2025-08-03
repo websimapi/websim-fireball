@@ -88,6 +88,7 @@ function onCommand(command) {
 
     // Send the recognized text to the desktop client for debugging.
     if (desktopPeerId) {
+        console.log('Mobile: Sending spokenText to desktop:', command);
         roomInstance.send({
             type: 'spokenText',
             text: command,
@@ -99,6 +100,7 @@ function onCommand(command) {
         if (desktopPeerId) {
             // Update status after a short delay so user can see "Heard:..."
             setTimeout(() => updateMicStatus(`Casting ${currentSpell.name}!`), 500);
+            console.log('Mobile: Sending castSpell message:', currentSpell.name);
             roomInstance.send({
                 type: 'castSpell',
                 spell: currentSpell.name,
@@ -123,9 +125,11 @@ function findMyDesktopPeer() {
 
     if (desktopPeerEntry) {
         desktopPeerId = desktopPeerEntry[0]; // This is the clientId
+        console.log('Mobile: Found desktop peer with ID:', desktopPeerId);
         updateMicStatus('Desktop connected. Hold spellbook and say the spell name to cast!');
     } else {
         desktopPeerId = null;
+        console.log('Mobile: No desktop peer found');
         updateMicStatus('Waiting for desktop to connect...');
     }
 }
