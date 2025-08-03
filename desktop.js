@@ -125,21 +125,13 @@ function animate() {
     
     // Handle player movement
     if (playerMovement.x !== 0 || playerMovement.y !== 0) {
-        // Correct Y-axis for movement: received y is for the z-axis.
+        // Movement is relative to world axes, which align with the screen view due to the fixed camera.
         const moveVector = new THREE.Vector3(playerMovement.x, 0, playerMovement.y);
         
         if (moveVector.lengthSq() > 0) {
-            // Player should face the direction of movement
-            const targetRotation = Math.atan2(moveVector.x, moveVector.z);
+            // Player does not rotate based on movement direction per user request.
+            // They will always face forward (away from the camera).
             
-            // Smoothly interpolate rotation
-            // We handle angle wrapping correctly
-            let angleDiff = targetRotation - player.rotation.y;
-            while (angleDiff < -Math.PI) angleDiff += 2 * Math.PI;
-            while (angleDiff > Math.PI) angleDiff -= 2 * Math.PI;
-            
-            player.rotation.y += angleDiff * 0.1; // Adjust 0.1 for faster/slower turning
-
             // Move the player
             moveVector.normalize().multiplyScalar(playerSpeed * delta);
             player.position.add(moveVector);
