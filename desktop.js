@@ -86,6 +86,7 @@ function setupScene() {
     player = new THREE.Mesh(playerGeometry, playerMaterial);
     player.position.y = 1; // Capsule height is 2 (1 radius + 1 height), so pivot is at center. Y=1 puts bottom on ground.
     player.castShadow = true;
+    player.rotation.y = Math.PI; // Face the camera
     scene.add(player);
 
     window.addEventListener('resize', onWindowResize, false);
