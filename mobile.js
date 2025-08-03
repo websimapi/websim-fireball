@@ -70,6 +70,37 @@ function setupEventListeners() {
     setupSpellAndMoveControls(spellbook);
 }
 
+function sendMovementData() {
+    if (!desktopPeerId || !movementState.isMoving) return;
+
+    const deltaX = movementState.currentX - movementState.centerX;
+    const deltaY = movementState.currentY - movementState.centerY;
+    const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+
+    if (distance === 0) {
+        roomInstance.send({ type: 'movement', x: 0, y: 0 });
+        return;
+    }
+
+    // Normalize the vector
+    const maxDistance = movementState.joystickRadius;
+    let normalizedX = deltaX / maxDistance;
+    let normalizedY = deltaY / maxDistance;
+    
+    // Clamp to a circle with radius 1
+    const magnitude = Math.sqrt(normalizedX * normalizedX + normalizedY * normalizedY);
+    if (magnitude > 1) {
+        normalizedX /= magnitude;
+        normalizedY /= magnitude;
+    }
+
+    roomInstance.send({
+        type: 'movement',
+        x: normalizedX,
+        y: normalizedY,
+    });
+}
+
 function setupSpellAndMoveControls(element) {
     const virtualJoystick = document.getElementById('virtual-joystick');
     const joystickKnob = document.getElementById('joystick-knob');

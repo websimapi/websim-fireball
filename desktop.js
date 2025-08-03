@@ -90,7 +90,7 @@ function setupScene() {
     player = new THREE.Mesh(playerGeometry, playerMaterial);
     player.position.y = 1; // Capsule height is 2 (1 radius + 1 height), so pivot is at center. Y=1 puts bottom on ground.
     player.castShadow = true;
-    player.rotation.y = 0; // Face away from the camera
+    player.rotation.y = Math.PI; // Face away from the camera
     scene.add(player);
 
     // Speaking Indicator - make it thinner, blue, glowing
@@ -127,10 +127,23 @@ function animate() {
     if (playerMovement.x !== 0 || playerMovement.y !== 0) {
         // Correct Y-axis for movement: received y is for the z-axis.
         const moveVector = new THREE.Vector3(playerMovement.x, 0, playerMovement.y);
-        moveVector.multiplyScalar(playerSpeed * delta);
-        player.position.add(moveVector);
         
-        // Player rotation is now fixed, so this part is removed.
+        if (moveVector.lengthSq() > 0) {
+            // Player should face the direction of movement
+            const targetRotation = Math.atan2(moveVector.x, moveVector.z);
+            
+            // Smoothly interpolate rotation
+            // We handle angle wrapping correctly
+            let angleDiff = targetRotation - player.rotation.y;
+            while (angleDiff < -Math.PI) angleDiff += 2 * Math.PI;
+            while (angleDiff > Math.PI) angleDiff -= 2 * Math.PI;
+            
+            player.rotation.y += angleDiff * 0.1; // Adjust 0.1 for faster/slower turning
+
+            // Move the player
+            moveVector.normalize().multiplyScalar(playerSpeed * delta);
+            player.position.add(moveVector);
+        }
     }
     
     // Animate speaking indicator with more dramatic movement and effects
