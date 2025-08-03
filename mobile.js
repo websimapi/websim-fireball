@@ -15,7 +15,7 @@ function renderMobileUI() {
     const app = document.getElementById('app');
     app.innerHTML = `
         <div id="mobile-ui">
-            <div id="mic-status">Initializing...</div>
+            <div id="mic-status">Press and hold the spellbook to speak a spell.</div>
             <div id="spellbook">
                 <div id="spell-display">
                     <img id="spell-icon" src="" alt="Spell Icon">
@@ -49,6 +49,33 @@ function setupEventListeners() {
         currentPage = (currentPage + 1) % SPELLS.length;
         updateSpellDisplay();
     });
+
+    const spellbook = document.getElementById('spellbook');
+    const startListening = (e) => {
+        e.preventDefault();
+        if (voiceCommander) {
+            voiceCommander.start().catch(err => {
+                updateMicStatus("Mic permission denied. Check browser settings.");
+                console.error("Error starting voice commander:", err);
+            });
+        }
+    };
+    const stopListening = (e) => {
+        e.preventDefault();
+        if (voiceCommander) {
+            voiceCommander.stop();
+        }
+    };
+
+    // For mobile
+    spellbook.addEventListener('touchstart', startListening);
+    spellbook.addEventListener('touchend', stopListening);
+    spellbook.addEventListener('touchcancel', stopListening);
+
+    // For desktop testing
+    spellbook.addEventListener('mousedown', startListening);
+    spellbook.addEventListener('mouseup', stopListening);
+    spellbook.addEventListener('mouseleave', stopListening);
 }
 
 function updateMicStatus(text) {
@@ -108,10 +135,9 @@ export async function initMobile(room) {
             onStatus: updateMicStatus,
             onError: (err) => updateMicStatus(`Mic Error: ${err}`)
         });
-        await voiceCommander.start();
+        // Do not start automatically anymore. It's triggered by touch.
     } catch (error) {
-        console.error("Voice recognition failed to start:", error);
-        updateMicStatus("Microphone permission denied or not supported.");
+        console.error("Voice recognition failed to initialize:", error);
+        updateMicStatus("Speech recognition not supported by this browser.");
     }
 }
-

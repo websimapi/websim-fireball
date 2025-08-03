@@ -53,6 +53,10 @@ canvas {
     align-items: center;
     padding: 20px;
     box-shadow: 0 0 20px rgba(0,0,0,0.5);
+    user-select: none; /* Prevent text selection on hold */
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
 }
 
 #spell-display {
@@ -111,4 +115,3 @@ canvas {
     color: white;
     font-family: monospace;
 }
-

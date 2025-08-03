@@ -3,6 +3,7 @@ export class VoiceCommander {
         this.onCommand = onCommand;
         this.onStatus = onStatus;
         this.onError = onError;
+        this.manualStop = false;
         
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (!SpeechRecognition) {
@@ -30,6 +31,10 @@ export class VoiceCommander {
         
         this.recognition.onend = () => {
             // The service sometimes stops. Restart it to keep listening.
+            if (this.manualStop) {
+                this.onStatus("Listening stopped.");
+                return;
+            }
             try {
                 this.recognition.start();
             } catch (e) {
@@ -52,17 +57,20 @@ export class VoiceCommander {
     }
 
     async start() {
+        this.manualStop = false;
         // Request microphone permission implicitly by starting
         try {
             this.recognition.start();
         } catch (error) {
-            this.onError("Could not start. May be already started or permission denied.");
-            throw error;
+            if (error.name !== 'InvalidStateError') { // Ignore if already started
+                this.onError("Could not start. May be already started or permission denied.");
+                throw error;
+            }
         }
     }
 
     stop() {
+        this.manualStop = true;
         this.recognition.stop();
     }
 }
-
