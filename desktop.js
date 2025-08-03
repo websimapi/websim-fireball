@@ -100,10 +100,11 @@ function setupScene() {
 
     // Position the wand to look like it's held in the right hand.
     // Player is rotated 180 deg, so its local -x points to world +x (screen right).
-    wand.position.set(-0.4, 0.2, 0.4); // Position: (right, up, forward) from player's center.
-    // Rotate it to point forward (along player's local +Z).
-    // The cylinder's axis is Y, so we rotate it 90 degrees on the X axis.
-    wand.rotation.set(THREE.MathUtils.degToRad(90), 0, 0); 
+    // The player's forward direction is its local -Z axis.
+    wand.position.set(-0.4, 0.2, -0.4); // Position: (right, up, forward) from player's center.
+    // Rotate it to point forward (along player's local -Z).
+    // The cylinder's main axis is Y, so we rotate it 90 degrees on the X axis to make it horizontal.
+    wand.rotation.x = Math.PI / 2; 
     
     player.add(wand);
     player.userData.wand = wand;
@@ -180,8 +181,9 @@ function animate() {
 
     // Camera follows player
     const cameraOffset = new THREE.Vector3(0, 5, 10);
-    camera.position.lerp(player.position.clone().add(cameraOffset), 0.05);
-    camera.lookAt(player.position);
+    const targetCameraPosition = player.position.clone().add(cameraOffset);
+    camera.position.lerp(targetCameraPosition, 0.05);
+    camera.lookAt(player.position.x, player.position.y, player.position.z);
 
     renderer.render(scene, camera);
 }
