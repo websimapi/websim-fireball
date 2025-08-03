@@ -91,6 +91,22 @@ function setupScene() {
     player.position.y = 1; // Capsule height is 2 (1 radius + 1 height), so pivot is at center. Y=1 puts bottom on ground.
     player.castShadow = true;
     player.rotation.y = Math.PI; // Face away from the camera
+
+    // Create and attach a wand
+    const wandGeometry = new THREE.CylinderGeometry(0.05, 0.03, 1, 8); // top-rad, bottom-rad, height, segments
+    const wandMaterial = new THREE.MeshStandardMaterial({ color: 0x8B4513 }); // SaddleBrown for a wood look
+    const wand = new THREE.Mesh(wandGeometry, wandMaterial);
+    wand.castShadow = true;
+
+    // Position the wand to look like it's held in the right hand.
+    // Player is rotated 180 deg, so its local +x points to world -x (screen left).
+    wand.position.set(0.4, 0.2, 0.2); // Position: (right, up, forward) from player's center.
+    // Rotate it to point forward and slightly to the side.
+    wand.rotation.set(THREE.MathUtils.degToRad(70), 0, THREE.MathUtils.degToRad(-20)); 
+    
+    player.add(wand);
+    player.userData.wand = wand;
+
     scene.add(player);
 
     // Speaking Indicator - make it thinner, blue, glowing
@@ -246,13 +262,17 @@ function castFireball() {
     });
     const fireball = new THREE.Mesh(fireballGeometry, fireballMaterial);
     
-    // Get player's forward direction
+    const wand = player.userData.wand;
+    const launchPosition = new THREE.Vector3(0, 0.5, 0); // Tip of the wand in its local space (y is up for cylinder)
+    
+    // Convert wand tip's local position to a world position
+    wand.localToWorld(launchPosition);
+    fireball.position.copy(launchPosition);
+    
+    // Get player's forward direction for velocity
     const forward = new THREE.Vector3();
     player.getWorldDirection(forward);
 
-    // Position fireball in front of player
-    fireball.position.copy(player.position).add(forward.clone().multiplyScalar(1));
-    
     const light = new THREE.PointLight(0xff4500, 5, 10);
     fireball.add(light);
     
