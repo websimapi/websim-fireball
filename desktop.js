@@ -125,11 +125,12 @@ function animate() {
     
     // Handle player movement
     if (playerMovement.x !== 0 || playerMovement.y !== 0) {
-        // Movement is relative to world axes, which align with the screen view due to the fixed camera.
+        // Movement is relative to world axes.
+        // Y from mobile is mapped to Z in 3D space.
         const moveVector = new THREE.Vector3(playerMovement.x, 0, playerMovement.y);
         
         if (moveVector.lengthSq() > 0) {
-            // Player does not rotate based on movement direction per user request.
+            // Player does not rotate based on movement direction.
             // They will always face forward (away from the camera).
             
             // Move the player

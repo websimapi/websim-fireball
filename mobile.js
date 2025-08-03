@@ -102,7 +102,7 @@ function setupSpellAndMoveControls(element) {
         roomInstance.send({
             type: 'movement',
             x: normalizedX,
-            y: -normalizedY, // Invert Y for correct screen-to-world mapping
+            y: normalizedY, // Remove inversion to fix forward/backward movement
         });
     }
 
