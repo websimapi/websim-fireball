@@ -10,6 +10,14 @@ let currentPage = 0;
 let roomInstance = null;
 let desktopPeerId = null;
 let voiceCommander;
+let movementState = {
+    isMoving: false,
+    centerX: 0,
+    centerY: 0,
+    currentX: 0,
+    currentY: 0,
+    joystickRadius: 80
+};
 
 function renderMobileUI() {
     const app = document.getElementById('app');
@@ -24,6 +32,13 @@ function renderMobileUI() {
                 <div id="spell-pages">
                     <button id="prev-btn" class="page-btn">Prev</button>
                     <button id="next-btn" class="page-btn">Next</button>
+                </div>
+            </div>
+            <div id="movement-area">
+                <div id="movement-instructions">Touch anywhere here to move</div>
+                <div id="virtual-joystick" style="display: none;">
+                    <div id="joystick-base"></div>
+                    <div id="joystick-knob"></div>
                 </div>
             </div>
         </div>
@@ -76,6 +91,122 @@ function setupEventListeners() {
     spellbook.addEventListener('mousedown', startListening);
     spellbook.addEventListener('mouseup', stopListening);
     spellbook.addEventListener('mouseleave', stopListening);
+
+    // Movement controls
+    setupMovementControls();
+}
+
+function setupMovementControls() {
+    const movementArea = document.getElementById('movement-area');
+    const virtualJoystick = document.getElementById('virtual-joystick');
+    const joystickBase = document.getElementById('joystick-base');
+    const joystickKnob = document.getElementById('joystick-knob');
+
+    function startMovement(e) {
+        e.preventDefault();
+        const touch = e.touches ? e.touches[0] : e;
+        const rect = movementArea.getBoundingClientRect();
+        
+        movementState.isMoving = true;
+        movementState.centerX = touch.clientX - rect.left;
+        movementState.centerY = touch.clientY - rect.top;
+        movementState.currentX = movementState.centerX;
+        movementState.currentY = movementState.centerY;
+
+        // Show virtual joystick
+        virtualJoystick.style.display = 'block';
+        virtualJoystick.style.left = (movementState.centerX - 40) + 'px';
+        virtualJoystick.style.top = (movementState.centerY - 40) + 'px';
+        
+        updateJoystickPosition();
+    }
+
+    function updateMovement(e) {
+        if (!movementState.isMoving) return;
+        e.preventDefault();
+        
+        const touch = e.touches ? e.touches[0] : e;
+        const rect = movementArea.getBoundingClientRect();
+        
+        movementState.currentX = touch.clientX - rect.left;
+        movementState.currentY = touch.clientY - rect.top;
+        
+        updateJoystickPosition();
+        sendMovementData();
+    }
+
+    function stopMovement(e) {
+        if (!movementState.isMoving) return;
+        e.preventDefault();
+        
+        movementState.isMoving = false;
+        virtualJoystick.style.display = 'none';
+        
+        // Send stop movement
+        if (desktopPeerId) {
+            roomInstance.send({
+                type: 'movement',
+                x: 0,
+                y: 0
+            });
+        }
+    }
+
+    function updateJoystickPosition() {
+        const deltaX = movementState.currentX - movementState.centerX;
+        const deltaY = movementState.currentY - movementState.centerY;
+        const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+        
+        // Constrain knob to joystick radius
+        if (distance <= movementState.joystickRadius) {
+            joystickKnob.style.left = (40 + deltaX) + 'px';
+            joystickKnob.style.top = (40 + deltaY) + 'px';
+        } else {
+            const angle = Math.atan2(deltaY, deltaX);
+            const constrainedX = Math.cos(angle) * movementState.joystickRadius;
+            const constrainedY = Math.sin(angle) * movementState.joystickRadius;
+            joystickKnob.style.left = (40 + constrainedX) + 'px';
+            joystickKnob.style.top = (40 + constrainedY) + 'px';
+            
+            // Update current position to constrained position
+            movementState.currentX = movementState.centerX + constrainedX;
+            movementState.currentY = movementState.centerY + constrainedY;
+        }
+    }
+
+    function sendMovementData() {
+        if (!desktopPeerId) return;
+        
+        const deltaX = movementState.currentX - movementState.centerX;
+        const deltaY = movementState.currentY - movementState.centerY;
+        const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+        
+        // Normalize to -1 to 1 range
+        const normalizedX = distance > 0 ? (deltaX / movementState.joystickRadius) : 0;
+        const normalizedY = distance > 0 ? (deltaY / movementState.joystickRadius) : 0;
+        
+        // Clamp values
+        const clampedX = Math.max(-1, Math.min(1, normalizedX));
+        const clampedY = Math.max(-1, Math.min(1, normalizedY));
+        
+        roomInstance.send({
+            type: 'movement',
+            x: clampedX,
+            y: -clampedY // Invert Y for game coordinates
+        });
+    }
+
+    // Touch events
+    movementArea.addEventListener('touchstart', startMovement);
+    movementArea.addEventListener('touchmove', updateMovement);
+    movementArea.addEventListener('touchend', stopMovement);
+    movementArea.addEventListener('touchcancel', stopMovement);
+
+    // Mouse events for desktop testing
+    movementArea.addEventListener('mousedown', startMovement);
+    movementArea.addEventListener('mousemove', updateMovement);
+    movementArea.addEventListener('mouseup', stopMovement);
+    movementArea.addEventListener('mouseleave', stopMovement);
 }
 
 function updateMicStatus(text) {

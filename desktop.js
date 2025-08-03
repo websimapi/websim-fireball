@@ -7,6 +7,8 @@ let fireballs = [];
 let lastSpokenText = '';
 let speakingIndicator = null;
 let isSpeaking = false;
+let playerMovement = { x: 0, y: 0 };
+let playerSpeed = 8;
 
 const spellCooldowns = {
     Fireball: {
@@ -120,6 +122,25 @@ function animate() {
     requestAnimationFrame(animate);
     
     const delta = 0.016; // simple fixed timestep
+    
+    // Handle player movement
+    if (playerMovement.x !== 0 || playerMovement.y !== 0) {
+        const moveVector = new THREE.Vector3(playerMovement.x, 0, playerMovement.y);
+        moveVector.multiplyScalar(playerSpeed * delta);
+        player.position.add(moveVector);
+        
+        // Rotate player to face movement direction
+        if (moveVector.length() > 0.01) {
+            const angle = Math.atan2(moveVector.x, moveVector.z);
+            player.rotation.y = angle;
+        }
+        
+        // Update speaking indicator position if active
+        if (isSpeaking && speakingIndicator) {
+            speakingIndicator.position.copy(player.position);
+            speakingIndicator.position.y = 0.2 + Math.sin(Date.now() * 0.008) * 0.8;
+        }
+    }
     
     // Animate speaking indicator with more dramatic movement and effects
     if (isSpeaking && speakingIndicator) {
@@ -272,6 +293,9 @@ export function initDesktop(room) {
             showInfo();
         } else if (data.type === 'speakingStatus') {
             showSpeakingIndicator(data.speaking);
+        } else if (data.type === 'movement') {
+            playerMovement.x = data.x;
+            playerMovement.y = data.y;
         }
     };
 }

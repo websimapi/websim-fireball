@@ -32,7 +32,7 @@ canvas {
     height: 100%;
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    justify-content: space-between;
     align-items: center;
     text-align: center;
     background-color: #2a2a2a;
@@ -43,7 +43,7 @@ canvas {
 #spellbook {
     width: 90%;
     max-width: 400px;
-    height: 70%;
+    height: 50%;
     background: #1a1a1a;
     border: 2px solid #a5673f;
     border-radius: 10px;
@@ -57,6 +57,7 @@ canvas {
     -webkit-user-select: none;
     -moz-user-select: none;
     -ms-user-select: none;
+    margin-bottom: 20px;
 }
 
 #spell-display {
@@ -159,4 +160,57 @@ canvas {
 
 .cooldown-spell.ready .cooldown-overlay {
     transform: scaleY(0);
+}
+
+#movement-area {
+    width: 90%;
+    max-width: 400px;
+    height: 35%;
+    background: #333;
+    border: 2px solid #666;
+    border-radius: 10px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+}
+
+#movement-instructions {
+    color: #aaa;
+    font-size: 1.1em;
+    pointer-events: none;
+}
+
+#virtual-joystick {
+    position: absolute;
+    width: 80px;
+    height: 80px;
+    pointer-events: none;
+}
+
+#joystick-base {
+    position: absolute;
+    width: 80px;
+    height: 80px;
+    border: 3px solid #666;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+    top: 0;
+    left: 0;
+}
+
+#joystick-knob {
+    position: absolute;
+    width: 30px;
+    height: 30px;
+    background: #4488ff;
+    border-radius: 50%;
+    top: 25px;
+    left: 25px;
+    box-shadow: 0 0 10px rgba(68, 136, 255, 0.5);
+    transition: none;
 }
