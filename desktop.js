@@ -213,8 +213,11 @@ export function initDesktop(room) {
 
     room.onmessage = (event) => {
         const { data, fromClientId } = event;
-        // Only accept messages from our paired mobile client
-        if (mobilePeerId && fromClientId !== mobilePeerId) return;
+        // Only accept messages from our paired mobile client.
+        // If we have a mobilePeerId, we only accept messages from it.
+        if (mobilePeerId && fromClientId !== mobilePeerId) {
+            return;
+        }
         
         if (data.type === 'castSpell') {
             if (data.spell === 'Fireball') {

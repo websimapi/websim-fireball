@@ -91,7 +91,6 @@ function onCommand(command) {
         roomInstance.send({
             type: 'spokenText',
             text: command,
-            recipient: desktopPeerId
         });
     }
 
@@ -103,8 +102,6 @@ function onCommand(command) {
             roomInstance.send({
                 type: 'castSpell',
                 spell: currentSpell.name,
-                // Only send to our desktop client
-                recipient: desktopPeerId
             });
         } else {
             updateMicStatus('Desktop not connected. Cannot cast spell.');
