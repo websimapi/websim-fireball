@@ -1,8 +1,10 @@
 export class VoiceCommander {
-    constructor({ onCommand, onStatus, onError }) {
+    constructor({ onCommand, onStatus, onError, onStart, onStop }) {
         this.onCommand = onCommand;
         this.onStatus = onStatus;
         this.onError = onError;
+        this.onStart = onStart || (() => {});
+        this.onStop = onStop || (() => {});
         this.manualStop = false;
         
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -63,6 +65,7 @@ export class VoiceCommander {
 
         this.recognition.onstart = () => {
             this.onStatus("Listening...");
+            this.onStart();
         };
 
         this.recognition.onerror = (event) => {
@@ -90,5 +93,6 @@ export class VoiceCommander {
     stop() {
         this.manualStop = true;
         this.recognition.stop();
+        this.onStop();
     }
 }

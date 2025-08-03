@@ -142,7 +142,25 @@ export async function initMobile(room) {
         voiceCommander = new VoiceCommander({
             onCommand,
             onStatus: updateMicStatus,
-            onError: (err) => updateMicStatus(`Mic Error: ${err}`)
+            onError: (err) => updateMicStatus(`Mic Error: ${err}`),
+            onStart: () => {
+                // Send speaking status to desktop
+                if (desktopPeerId) {
+                    roomInstance.send({
+                        type: 'speakingStatus',
+                        speaking: true,
+                    });
+                }
+            },
+            onStop: () => {
+                // Send speaking status to desktop
+                if (desktopPeerId) {
+                    roomInstance.send({
+                        type: 'speakingStatus',
+                        speaking: false,
+                    });
+                }
+            }
         });
         // Do not start automatically anymore. It's triggered by touch.
     } catch (error) {

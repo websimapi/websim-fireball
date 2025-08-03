@@ -5,6 +5,8 @@ let mobilePeerId = null;
 let roomInstance = null;
 let fireballs = [];
 let lastSpokenText = '';
+let speakingIndicator = null;
+let isSpeaking = false;
 
 const spellCooldowns = {
     Fireball: {
@@ -89,6 +91,20 @@ function setupScene() {
     player.rotation.y = Math.PI; // Face the camera
     scene.add(player);
 
+    // Speaking Indicator
+    const ringGeometry = new THREE.RingGeometry(1.5, 1.8, 32);
+    const ringMaterial = new THREE.MeshBasicMaterial({ 
+        color: 0xffff00, 
+        transparent: true, 
+        opacity: 0.8,
+        side: THREE.DoubleSide
+    });
+    speakingIndicator = new THREE.Mesh(ringGeometry, ringMaterial);
+    speakingIndicator.rotation.x = -Math.PI / 2; // Lay flat on ground
+    speakingIndicator.position.y = 0.1; // Slightly above ground
+    speakingIndicator.visible = false;
+    scene.add(speakingIndicator);
+
     window.addEventListener('resize', onWindowResize, false);
 }
 
@@ -102,6 +118,14 @@ function animate() {
     requestAnimationFrame(animate);
     
     const delta = 0.016; // simple fixed timestep
+    
+    // Animate speaking indicator
+    if (isSpeaking && speakingIndicator) {
+        const time = Date.now() * 0.005;
+        speakingIndicator.position.y = 0.1 + Math.sin(time) * 0.3; // Move up and down
+        speakingIndicator.rotation.z += delta * 2; // Rotate for extra effect
+    }
+    
     fireballs.forEach((fireball, index) => {
         fireball.position.addScaledVector(fireball.userData.velocity, delta);
         fireball.userData.lifetime -= delta;
@@ -205,6 +229,17 @@ function castFireball() {
     scene.add(fireball);
 }
 
+function showSpeakingIndicator(speaking) {
+    isSpeaking = speaking;
+    if (speakingIndicator) {
+        speakingIndicator.visible = speaking;
+        if (speaking) {
+            speakingIndicator.position.copy(player.position);
+            speakingIndicator.position.y = 0.1;
+        }
+    }
+}
+
 export function initDesktop(room) {
     roomInstance = room;
     setupScene();
@@ -225,6 +260,8 @@ export function initDesktop(room) {
         } else if (data.type === 'spokenText') {
             lastSpokenText = data.text;
             showInfo();
+        } else if (data.type === 'speakingStatus') {
+            showSpeakingIndicator(data.speaking);
         }
     };
 }
