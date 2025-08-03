@@ -102,7 +102,7 @@ function setupSpellAndMoveControls(element) {
         roomInstance.send({
             type: 'movement',
             x: normalizedX,
-            y: normalizedY,
+            y: -normalizedY, // Invert Y for correct screen-to-world mapping
         });
     }
 
@@ -113,28 +113,21 @@ function setupSpellAndMoveControls(element) {
         if (e.touches && e.touches.length > 1) return;
 
         movementState.startEvent = e;
-        // After a short delay, if the finger is still held down, start voice recognition.
-        movementState.moveTimeout = setTimeout(() => {
-            if (movementState.startEvent) { // Check if finger is still down
-                movementState.isMoving = false; // Ensure we are not in moving state
-                if (voiceCommander) {
-                    voiceCommander.start().catch(err => {
-                        updateMicStatus("Mic permission denied. Check browser settings.");
-                        console.error("Error starting voice commander:", err);
-                    });
-                }
-            }
-        }, 200); // 200ms delay to differentiate tap-drag from hold
+        
+        // Start voice recognition immediately on touch
+        if (voiceCommander) {
+            voiceCommander.start().catch(err => {
+                updateMicStatus("Mic permission denied. Check browser settings.");
+                console.error("Error starting voice commander:", err);
+            });
+        }
     };
 
     const moveListener = (e) => {
         if (!movementState.startEvent) return;
         e.preventDefault();
 
-        // If we move significantly, cancel the spell-casting timer and start moving.
-        clearTimeout(movementState.moveTimeout);
-        movementState.moveTimeout = null;
-        
+        // If we move, start the movement logic.
         if (!movementState.isMoving) {
             // This is the first movement after the initial touch.
             movementState.isMoving = true;
@@ -161,8 +154,11 @@ function setupSpellAndMoveControls(element) {
 
     const endListener = (e) => {
         e.preventDefault();
-        clearTimeout(movementState.moveTimeout);
-        movementState.moveTimeout = null;
+
+        // Always stop listening on touch end.
+        if (voiceCommander) {
+            voiceCommander.stop();
+        }
 
         if (movementState.isMoving) {
             // If we were moving, stop movement.
@@ -171,12 +167,8 @@ function setupSpellAndMoveControls(element) {
             if (desktopPeerId) {
                 roomInstance.send({ type: 'movement', x: 0, y: 0 });
             }
-        } else {
-            // If we were not moving, it was a hold for spellcasting. Stop listening.
-            if (voiceCommander) {
-                voiceCommander.stop();
-            }
         }
+        
         movementState.startEvent = null;
     };
 
